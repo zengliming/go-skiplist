@@ -12,25 +12,25 @@ type Node struct {
 }
 
 type List struct {
-	mutex *sync.RWMutex
-	size uint64
-	head *Node
-	tail *Node
+	mutex    *sync.RWMutex
+	size     uint64
+	head     *Node
+	tail     *Node
 	sortType SortType
 }
 
 type SortType int
 
 const (
-	_ SortType = iota
-	DESC=0
-	ASC=1
+	_    SortType = iota
+	DESC          = 0
+	ASC           = 1
 )
 
 /**
  * 初始化链表
  */
-func (list *List) Init(sortType SortType)  {
+func (list *List) Init(sortType SortType) {
 	// 默认size
 	(*list).size = 0
 	(*list).head = nil
@@ -39,14 +39,14 @@ func (list *List) Init(sortType SortType)  {
 	(*list).sortType = sortType
 }
 
-func (node *Node) GetDate() int64  {
+func (node *Node) GetData() int64 {
 	if node == nil {
 		return -1
 	}
 	return node.data
 }
 
-func (list *List) Append(data int64)  {
+func (list *List) Append(data int64) {
 	list.mutex.Lock()
 	defer list.mutex.Unlock()
 	newNode := new(Node)
@@ -61,18 +61,18 @@ func (list *List) Append(data int64)  {
 	} else {
 		if list.sortType == DESC {
 			// 倒序 从小到大
-			for node := list.tail;node!=nil;node=node.prev {
-				if node.data<=data {
+			for node := list.tail; node != nil; node = node.prev {
+				if node.data <= data {
 					list.insertNext(node, data)
 					return
 				}
 			}
 			list.insertNext((*list).tail, data)
-		}else {
+		} else {
 			node := list.head
 			// 顺序 从大到小
-			for ;node!=nil;node=node.next {
-				if node.data>=data {
+			for ; node != nil; node = node.next {
+				if node.data >= data {
 					list.insertNext(node, data)
 					return
 				}
@@ -102,7 +102,6 @@ func (list *List) isTail(element *Node) bool {
 	return list.GetTail() == element
 }
 
-
 /**
  * 在节点后面插入数据
  */
@@ -112,7 +111,7 @@ func (list *List) insertNext(element *Node, data int64) bool {
 	}
 	if list.isTail(element) {
 		newNode := new(Node)
-		(*newNode).data =  data
+		(*newNode).data = data
 		if (*list).GetSize() == 0 {
 			(*list).head = newNode
 			(*list).tail = newNode
@@ -126,7 +125,7 @@ func (list *List) insertNext(element *Node, data int64) bool {
 		}
 
 		(*list).size++;
-	}else {
+	} else {
 		newNode := new(Node)
 		(*newNode).data = data
 		(*newNode).prev = element
@@ -143,7 +142,7 @@ func (list *List) insertNext(element *Node, data int64) bool {
  */
 func (list *List) insertPrev(element *Node, data int64) bool {
 
-	if element ==nil {
+	if element == nil {
 		return false;
 	}
 	if list.isHead(element) {
@@ -152,7 +151,6 @@ func (list *List) insertPrev(element *Node, data int64) bool {
 		(*newNode).data = data
 		(*newNode).next = (*list).GetHead()
 		(*newNode).prev = nil
-
 
 		(*((*list).head)).prev = newNode
 		(*list).head = newNode
@@ -170,31 +168,69 @@ func (list *List) Search(data int64) *Node {
 	}
 
 	if list.sortType == DESC {
-		node := list.tail
+		node := new(Node)
+		node = list.tail
+		if node == nil {
+			return nil
+		}
 		// 倒序 从小到大
-		for ;node!=nil;node=node.prev {
+		for ; node != nil; node = node.prev {
+
+			if node == nil {
+				return nil
+			}
+
+			if node.data == data {
+				return node
+			}
+			if list.isHead(node) {
+				return nil
+			}
 			if node.data < data {
-				if list.isHead(node) {
+
+				prevNode := node.prev
+				if prevNode.data > data {
 					break
-				}else {
-					prevNode := node.prev
-					if prevNode.data == data {
-						return prevNode
+				} else if prevNode.data == data {
+					return prevNode
+				} else {
+					node = prevNode
+					if node == nil {
+						return nil
 					}
 				}
 			}
 		}
-	}else {
-		node := list.head
+	} else {
+		node := new(Node)
+		node = list.head
+		if node == nil {
+			return nil
+		}
 		// 顺序 从大到小
-		for ;node!=nil;node=node.next {
+		for ; node != nil; node = node.next {
+
+			if node == nil {
+				return nil
+			}
+
+			if node.data == data {
+				return node
+			}
+
+			if list.isTail(node) {
+				return nil
+			}
 			if node.data > data {
-				if list.isTail(node) {
-					break
-				}else {
-					nextNode := node.next
-					if nextNode.data == data {
-						return nextNode
+				nextNode := node.next
+				if nextNode.data < data {
+					return nil
+				} else if nextNode.data == data {
+					return nextNode
+				} else {
+					node = nextNode.next
+					if node == nil {
+						return nil
 					}
 				}
 			}
@@ -215,7 +251,7 @@ func (list *List) Remove(element *Node) int64 {
 	if list.isHead(element) {
 		// 删除头结点
 		(*list).head = next
-	}else {
+	} else {
 		(*prev).next = next;
 	}
 
@@ -229,7 +265,7 @@ func (list *List) Remove(element *Node) int64 {
 }
 
 // Display 打印双链表信息
-func (list *List)Display(){
+func (list *List) Display() {
 	if list == nil || list.size == 0 {
 		fmt.Println("this double list is nil or empty")
 		return
