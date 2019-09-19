@@ -6,7 +6,7 @@ import (
 )
 
 type Node struct {
-	data uint64
+	data int64
 	prev *Node
 	next *Node
 }
@@ -23,23 +23,30 @@ type SortType int
 
 const (
 	_ SortType = iota
-	DESC
-	ASC
+	DESC=0
+	ASC=1
 )
 
 /**
  * 初始化链表
  */
 func (list *List) Init(sortType SortType)  {
-	_list := *(list)
 	// 默认size
-	_list.size = 0
-	_list.head = nil
-	_list.tail = nil
-	_list.mutex = new(sync.RWMutex)
+	(*list).size = 0
+	(*list).head = nil
+	(*list).tail = nil
+	(*list).mutex = new(sync.RWMutex)
+	(*list).sortType = sortType
 }
 
-func (list *List) Append(data uint64)  {
+func (node *Node) GetDate() int64  {
+	if node == nil {
+		return -1
+	}
+	return node.data
+}
+
+func (list *List) Append(data int64)  {
 	list.mutex.Lock()
 	defer list.mutex.Unlock()
 	newNode := new(Node)
@@ -50,27 +57,29 @@ func (list *List) Append(data uint64)  {
 		(*list).tail = newNode
 		(*newNode).next = nil
 		(*newNode).prev = nil
+		(*list).size++
 	} else {
-
 		if list.sortType == DESC {
-			node := list.tail
 			// 倒序 从小到大
-			for ;node!=nil;node=node.prev {
-				if node.data>data {
+			for node := list.tail;node!=nil;node=node.prev {
+				if node.data<=data {
 					list.insertNext(node, data)
+					return
 				}
 			}
+			list.insertNext((*list).tail, data)
 		}else {
 			node := list.head
 			// 顺序 从大到小
 			for ;node!=nil;node=node.next {
-				if node.data>data {
-					list.insertPrev(node, data)
+				if node.data>=data {
+					list.insertNext(node, data)
+					return
 				}
 			}
+			list.insertPrev((*list).head, data)
 		}
 	}
-	(*list).size++;
 }
 
 func (list *List) GetSize() uint64 {
@@ -97,14 +106,26 @@ func (list *List) isTail(element *Node) bool {
 /**
  * 在节点后面插入数据
  */
-func (list *List) insertNext(element *Node, data uint64) bool {
+func (list *List) insertNext(element *Node, data int64) bool {
 	if element == nil {
 		return false
 	}
-
 	if list.isTail(element) {
-		// 插入在尾节点后面
-		list.Append(data);
+		newNode := new(Node)
+		(*newNode).data =  data
+		if (*list).GetSize() == 0 {
+			(*list).head = newNode
+			(*list).tail = newNode
+			(*newNode).prev = nil
+			(*newNode).next = nil
+		} else { //  挂在车队尾部
+			(*newNode).prev = (*list).tail
+			(*newNode).next = nil
+			(*((*list).tail)).next = newNode
+			(*list).tail = newNode
+		}
+
+		(*list).size++;
 	}else {
 		newNode := new(Node)
 		(*newNode).data = data
@@ -120,12 +141,11 @@ func (list *List) insertNext(element *Node, data uint64) bool {
 /**
  * 在节点前面插入数据
  */
-func (list *List) insertPrev(element *Node, data uint64) bool {
+func (list *List) insertPrev(element *Node, data int64) bool {
 
 	if element ==nil {
 		return false;
 	}
-
 	if list.isHead(element) {
 		// 插入在头结点前面
 		newNode := new(Node)
@@ -144,9 +164,48 @@ func (list *List) insertPrev(element *Node, data uint64) bool {
 	}
 }
 
-func (list *List) Remove(element *Node) uint64 {
+func (list *List) Search(data int64) *Node {
+	if list.GetSize() == 0 {
+		return nil
+	}
+
+	if list.sortType == DESC {
+		node := list.tail
+		// 倒序 从小到大
+		for ;node!=nil;node=node.prev {
+			if node.data < data {
+				if list.isHead(node) {
+					break
+				}else {
+					prevNode := node.prev
+					if prevNode.data == data {
+						return prevNode
+					}
+				}
+			}
+		}
+	}else {
+		node := list.head
+		// 顺序 从大到小
+		for ;node!=nil;node=node.next {
+			if node.data > data {
+				if list.isTail(node) {
+					break
+				}else {
+					nextNode := node.next
+					if nextNode.data == data {
+						return nextNode
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (list *List) Remove(element *Node) int64 {
 	if element == nil {
-		return -1
+		return 0
 	}
 	list.mutex.Lock()
 	defer list.mutex.Unlock()
@@ -177,10 +236,12 @@ func (list *List)Display(){
 	}
 	list.mutex.RLock()
 	defer list.mutex.RUnlock()
-	fmt.Printf("this double list size is %d \n", list.size)
+	fmt.Printf("this list size is %d \n", list.size)
 	ptr := list.head
+	fmt.Printf("data is")
 	for ptr != nil {
-		fmt.Printf("data is %v\n", ptr.data)
+		fmt.Printf(" %v ,", ptr.data)
 		ptr = ptr.next
 	}
+	fmt.Printf("\n")
 }
