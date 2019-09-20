@@ -1,35 +1,45 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"go-skiplist/skip_list"
-	"math/rand"
+	"math/big"
 	"time"
 )
 
-func main()  {
+func main() {
 	list := new(skip_list.SkipList)
-	list.New(8)
+	list.New(2)
 
-	for i:=0;i<1000000;i++ {
-		rand.Seed(time.Now().UnixNano())
-		randNum := int64(rand.Intn(1000000000))
-		list.Append(randNum)
+	var arr [10000]int64
+	for i := 0; i < 50000; i++ {
+		result, _ := rand.Int(rand.Reader, big.NewInt(1000000))
+		list.Append(result.Int64())
 	}
-	rand.Seed(time.Now().UnixNano())
-	s := int64(rand.Intn(1000000))
-	fmt.Printf("need search data : %v \n", s)
-	list.Append(s)
+	for j := 0; j < 10000; j++ {
+		result, _ := rand.Int(rand.Reader, big.NewInt(1000000))
+		arr[j] = result.Int64()
+		list.Append(result.Int64())
+	}
 	b1 := time.Now().UnixNano()
 	fmt.Printf("begin %v \n", b1)
-	n1 := list.Search(s)
+	for k := 0; k < 10000; k++ {
+		randNum := arr[k]
+		_ = list.Search(randNum)
+	}
 	e1 := time.Now().UnixNano()
-	fmt.Printf("end %v \n", b1)
-	fmt.Printf("use %v data %v \n", e1-b1, n1.GetData())
+	fmt.Printf("end %v \n", e1)
+	fmt.Printf("use %v \n", (e1-b1)/10000)
+
 	b2 := time.Now().UnixNano()
 	fmt.Printf("begin %v \n", b2)
-	n2 := list.DirectSearch(s)
+	for i := 0; i < 10000; i++ {
+		randNum := arr[i]
+		_ = list.DirectSearch(randNum)
+	}
 	e2 := time.Now().UnixNano()
 	fmt.Printf("end %v \n", e2)
-	fmt.Printf("use %v  data %v \n", e2-b2, n2.GetData())
+	fmt.Printf("use %v \n", (e2-b2)/10000)
+
 }

@@ -15,7 +15,7 @@ func (sl *SkipList) New(level int) {
 	(*sl).level = level
 	for i := 0; i < level; i++ {
 		list := new(linked_list.List)
-		list.Init(linked_list.ASC)
+		list.Init(linked_list.DESC)
 		(*sl).elements = append(sl.elements, list)
 	}
 }
