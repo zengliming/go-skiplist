@@ -16,7 +16,7 @@ type List struct {
 	size     uint64
 	head     *Node
 	tail     *Node
-	sortType SortType
+	sortType SortType // 排序规则
 }
 
 type SortType int
@@ -27,10 +27,20 @@ const (
 	ASC           = 1
 )
 
+func New() *List {
+	return NewWithSort(ASC)
+}
+
+func NewWithSort(sortType SortType) *List {
+	list := new(List)
+	list.init(sortType)
+	return list
+}
+
 /**
  * 初始化链表
  */
-func (list *List) Init(sortType SortType) {
+func (list *List) init(sortType SortType) {
 	// 默认size
 	(*list).size = 0
 	(*list).head = nil
@@ -50,7 +60,7 @@ func (list *List) Append(data int64) {
 	list.mutex.Lock()
 	defer list.mutex.Unlock()
 	newNode := new(Node)
-	(*newNode).data = data;
+	(*newNode).data = data
 	if list.size == 0 {
 		// 当前没有Node 此时出入的为头结点 也同时是尾结点
 		(*list).head = newNode
@@ -150,7 +160,7 @@ func (list *List) insertNext(element *Node, data int64) bool {
 			(*list).tail = newNode
 		}
 
-		(*list).size++;
+		(*list).size++
 	} else {
 		newNode := new(Node)
 		(*newNode).data = data
@@ -169,7 +179,7 @@ func (list *List) insertNext(element *Node, data int64) bool {
 func (list *List) insertPrev(element *Node, data int64) bool {
 
 	if element == nil {
-		return false;
+		return false
 	}
 	if list.isHead(element) {
 		// 插入在头结点前面
@@ -180,7 +190,7 @@ func (list *List) insertPrev(element *Node, data int64) bool {
 
 		(*((*list).head)).prev = newNode
 		(*list).head = newNode
-		(*list).size ++
+		(*list).size++
 		return true
 	} else {
 		prev := (*element).prev
@@ -264,7 +274,7 @@ func (list *List) Search(data int64) *Node {
 		}
 
 		// 倒序 从大到小
-		for ; node != nil; {
+		for node != nil {
 
 			if node == nil {
 				return nil
@@ -310,7 +320,7 @@ func (list *List) Remove(element *Node) int64 {
 		// 删除头结点
 		(*list).head = next
 	} else {
-		(*prev).next = next;
+		(*prev).next = next
 	}
 
 	if list.isTail(element) {
