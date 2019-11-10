@@ -22,9 +22,10 @@ type List struct {
 type SortType int
 
 const (
-	_    SortType = iota
-	DESC          = 0
-	ASC           = 1
+	_       SortType = iota
+	DESC             = 0
+	ASC              = 1
+	NO_SORT          = 2
 )
 
 func New() *List {
@@ -69,53 +70,67 @@ func (list *List) Append(data int64) {
 		(*newNode).prev = nil
 		(*list).size++
 	} else {
-		if list.sortType == ASC {
 
-			if data <= list.head.data {
-				list.insertPrev(list.head, data)
-				return
-			}
-
-			if data >= list.tail.data {
-				list.insertNext(list.tail, data)
-				return
-			}
-
-			// 顺序 从小到大
-			for node := list.tail; node != nil; node = node.prev {
-				if node.data <= data {
-					list.insertNext(node, data)
-					return
-				}
-			}
-			list.insertPrev((*list).head, data)
+		if list.sortType == NO_SORT {
+			list.noSortInsert(data)
+		} else if list.sortType == ASC {
+			list.ascInsert(data)
 		} else {
+			list.descInsert(data)
 
-			if data >= list.head.data {
-				list.insertPrev(list.head, data)
-				return
-			}
-
-			if data <= list.tail.data {
-				list.insertNext(list.tail, data)
-				return
-			}
-
-			node := list.head
-			if node.data <= data {
-				list.insertPrev(node, data)
-				return
-			}
-			// 顺序 从大到小
-			for ; node != nil; node = node.next {
-				if node.data <= data {
-					list.insertPrev(node, data)
-					return
-				}
-			}
-			list.insertNext(node, data)
 		}
 	}
+}
+
+func (list *List) noSortInsert(data int64) {
+	list.insertNext(list.tail, data)
+}
+
+func (list *List) ascInsert(data int64) {
+	if data <= list.head.data {
+		list.insertPrev(list.head, data)
+		return
+	}
+
+	if data >= list.tail.data {
+		list.insertNext(list.tail, data)
+		return
+	}
+
+	// 顺序 从小到大
+	for node := list.tail; node != nil; node = node.prev {
+		if node.data <= data {
+			list.insertNext(node, data)
+			return
+		}
+	}
+	list.insertPrev((*list).head, data)
+}
+
+func (list *List) descInsert(data int64) {
+	if data >= list.head.data {
+		list.insertPrev(list.head, data)
+		return
+	}
+
+	if data <= list.tail.data {
+		list.insertNext(list.tail, data)
+		return
+	}
+
+	node := list.head
+	if node.data <= data {
+		list.insertPrev(node, data)
+		return
+	}
+	// 顺序 从大到小
+	for ; node != nil; node = node.next {
+		if node.data <= data {
+			list.insertPrev(node, data)
+			return
+		}
+	}
+	list.insertNext(node, data)
 }
 
 func (list *List) GetSize() uint64 {
@@ -205,13 +220,23 @@ func (list *List) Search(data int64) *Node {
 
 	if list.sortType == ASC {
 		node := new(Node)
+
+		// 要查找的数据等于头结点 返回头结点
+		if data == list.head.data {
+			return list.head
+		}
+
+		// 要查找的数据等于尾结点 返回尾结点
+		if data == list.tail.data {
+			return list.tail
+		}
+
+		// 要查找的数据小于头结点数据或者大于尾节点数据 则不存在改链表中（从小到大 小于最小 大于最大）
+		if data < list.head.data || data > list.tail.data {
+			return nil
+		}
 		// 倒序 从小到大
 		for node = list.tail; node != nil; {
-
-			if node == nil {
-				return nil
-			}
-
 			// 当前节点等于要查找的数据 返回当前节点
 			if node.data == data {
 				return node
@@ -220,24 +245,8 @@ func (list *List) Search(data int64) *Node {
 			if list.isHead(node) {
 				return nil
 			}
-
-			// 要查找的数据小于头结点数据或者大于尾节点数据 则不存在改链表中（从小到大 小于最小 大于最大）
-			if data < list.head.data || data > list.tail.data {
-				return nil
-			}
-
-			// 要查找的数据等于头结点 返回头结点
-			if data == list.head.data {
-				return list.head
-			}
-
-			// 要查找的数据等于尾结点 返回尾结点
-			if data == list.tail.data {
-				return list.tail
-			}
-
 			//  当前节点的数据小于要查找的数据
-			if node.data < data {
+			if node.data > data {
 				//  判断前置节点的值与要查找的值
 				prevNode := node.prev
 				if prevNode.data > data {
@@ -253,7 +262,7 @@ func (list *List) Search(data int64) *Node {
 				}
 			} else {
 				// 节点的值小于要查找的值
-				node = node.prev
+				break
 			}
 		}
 	} else {
@@ -262,23 +271,18 @@ func (list *List) Search(data int64) *Node {
 		if node == nil {
 			return nil
 		}
-		if data > list.head.data || data < list.tail.data {
-			return nil
-		}
 		if data == list.head.data {
 			return list.head
 		}
-
 		if data == list.tail.data {
 			return list.tail
+		}
+		if data > list.head.data || data < list.tail.data {
+			return nil
 		}
 
 		// 倒序 从大到小
 		for node != nil {
-
-			if node == nil {
-				return nil
-			}
 
 			if node.data == data {
 				return node
@@ -300,7 +304,7 @@ func (list *List) Search(data int64) *Node {
 					node = nextNode.next
 				}
 			} else {
-				node = node.next
+				break
 			}
 		}
 	}

@@ -7,7 +7,7 @@ import (
 	"math/big"
 )
 
-const defaultLev = 12
+const defaultLev = 32
 
 type SkipList struct {
 	level              int                 // level 数
